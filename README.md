@@ -341,7 +341,7 @@ chronyc sources
 #^? adserver.intra.it             0   6     0     -     +0ns[   +0ns] +/-    0ns
 ```
 
-### Joinning the domain using linux machine###
+### Joinning the domain using linux machine ###
 1. Add EPEL repository
 ```
 yum install -y epel-release
