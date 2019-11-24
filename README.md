@@ -12,7 +12,7 @@ Im testing on virtual environment with virtual box
 
 ## My environment ##
 
->- (VirtualBox)[https://www.virtualbox.org/wiki/Downloads]
+>- [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
 Every machine is attached to 'NAT Network' on virtual box, this network is 192.168.0.0/24
 
