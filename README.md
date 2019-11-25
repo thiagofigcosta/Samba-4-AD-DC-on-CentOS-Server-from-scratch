@@ -147,7 +147,7 @@ cp /etc/samba/smb.conf /etc/samba/smb.conf.raw
    >>- Set workgroup equal to your SLD (first part of domain) **in uppercase**
    >>- Add the following line `kerberos method = system keytab`
    >>- Add the following line `realm = INTRA.IT` which has the format `realm = $DOMAIN` **in uppercase**
-   >>- Add the following line `dns forwarder = 8.8.8.8` **dont add this line if you want to forward to a local dns**
+   <!-- >>- Add the following line `dns forwarder = 8.8.8.8` **dont add this line if you want to forward to a local dns** -->
    >>- Add the following line `idmap_ldb:use rfc2307 = yes`
    >>- Add the following line `tls enabled = yes`
    >>- Add the following line `tls keyfile = tls/key.pem`
@@ -165,13 +165,12 @@ After this step my [global] session looks like:
         load printers = yes
         cups options = raw
         kerberos method = system keytab
-        dns forwarder = 8.8.8.8
         idmap_ldb:use rfc2307 = yes
         tls enabled = yes
         tls keyfile = tls/key.pem
         tls cafile = tls/ca.pem
         tls certfile = tls/cert.pem
-```
+``` <!--   dns forwarder = 8.8.8.8 -->
 1. Make a backup of you configured file
 ```
 cp /etc/samba/smb.conf /etc/samba/smb.conf.$(dnsdomainname)
@@ -181,7 +180,7 @@ Realm: INTRA.IT **uppercase**
 Domain: INTRA **uppercase**
 Server role: dc # domain controller
 DNS backend: SAMBA_INTERNAL 
-DNS forwarder ip address: none # **THIAGO verificar se com essa opção none eu tenho acesso a internet?** **you maybe want to forward a local dns**
+DNS forwarder ip address: 8.8.8.8 # **you maybe want to forward another local dns**
 ```
 samba-tool domain provision --use-rfc2307 --interactive
 ``` 
