@@ -1,8 +1,9 @@
 # How to install Samba 4 AD DC on CentOS 8 and connect windows and linux clients #
 
 
-How to install AD in CentOS server and connect windows and linux machines as clients
-Im testing on virtual environment with virtual box
+How to install AD in CentOS server and connect windows and linux machines as clients.
+
+I'm testing on a virtual environment with VirtualBox.
 
 ## Requirements ##
 
@@ -29,17 +30,17 @@ samba administrator password = Toto123
 
 **On virtual box with NAT network the gateway is the first address of the network, in this scenario is 192.168.0.1**
 
-## Configuring Server ##
+## Configuring the Server ##
 
 >- Install virtual box, and create one machine for the server, one for the linux client and one for windows client
 >- Configue the network to NAT Network
 >- Enable bidirecional clipboard on the machines, it can be very useful
->- Install install centOS and windows on its machines
+>- Install CentOS and Windows on its own machines
 
 ## Configuring the server ##
 
 ### Updating ###
-1. Fill safe to take snapshots of the machine after important steps
+1. Feel safer by taking snapshots of the machine after important steps
 2. Login as root **every following step is made on root user**
 
 ```
@@ -60,7 +61,7 @@ yum update
 
 ### Configuring the computer ###
 
-1. Configure you network card to have fixed IP, in my case I'll use **192.168.0.10/24** as my IP, and as I said, **192.168.0.1/24** as gateway
+1. Configure you network card to have fixed IP, in my case I'll use **192.168.0.10/24** as my IP, and as I said before, **192.168.0.1/24** as gateway
 tip: on linux usually the network file is on /etc/network/interfaces, but in centos 8 its on /etc/sysconfig/network-scripts/ifcfg-`interface_name`
 
 2. Set your computer name and your domain, following the patern `hostnamectl set-hostname --static "$COMPUTERNAME.$DOMAIN"`, **choose a DNS valid name for the computer**
@@ -162,14 +163,14 @@ tar -zxvf samba-4.11.2.tar.gz # uncompress
 cd samba-4.11.2 # enter
 ```
 
-4. Compile and install it **this might take a while**
+4. Compile and install it. **This might take a while**
 
 ```
 ./configure --enable-debug 
 make && make install
 ```
 
-5. Add samba binaries to you PATH variable to be able to run its commands on terminal, this is done adding `export PATH=$PATH:/usr/local/samba/bin/:/usr/local/samba/sbin/` to the end of the file .bash_profile of our user (works for terminals opened after this command), and runing it one (works for the current session)
+5. Add samba binaries to you PATH variable, so that it'll be able to run its commands on terminal. This is done adding `export PATH=$PATH:/usr/local/samba/bin/:/usr/local/samba/sbin/` to the end of the file .bash_profile of our user (works for terminals opened after this command), and running it once (works for the current session).
 
 ```
 printf "\nexport PATH=$PATH:/usr/local/samba/bin/:/usr/local/samba/sbin/\n" >> /root/.bash_profile # for futher sessions
@@ -217,7 +218,7 @@ After this step my [global] session looks like: <!--  removed: dns forwarder = 8
 ```
 
 
-8. Make a backup of you configured file
+8. Make a backup of your configured file
 
 ```
 cp /etc/samba/smb.conf /etc/samba/smb.conf.$(dnsdomainname)
@@ -226,16 +227,20 @@ cp /etc/samba/smb.conf /etc/samba/smb.conf.$(dnsdomainname)
 9. Use samba-tool to configure your samba ad dc
 
 Realm: INTRA.IT **uppercase**
+
 Domain: INTRA **uppercase**
+
 Server role: dc # domain controller
+
 DNS backend: SAMBA_INTERNAL 
+
 DNS forwarder ip address: 8.8.8.8 # **you maybe want to forward another local dns**
 
 ```
 samba-tool domain provision --use-rfc2307 --interactive
 ``` 
 
-10.  Check you everything worked
+10.  Check that everything's worked
 
 ```
 samba-tool domain level show
@@ -278,7 +283,7 @@ You can check if samba is running and its listening ports by using:
 netstat -tulpn | egrep 'smbd|samba'
 ```
 
-The file `samba_ad.service` looks like this:
+The file `samba_ad.service` should look like this:
 
 ```
 [Unit]
@@ -295,7 +300,7 @@ ExecStart=/usr/local/samba/sbin/samba
 WantedBy=multi-user.target
 ```
 
-13. **Optional** since i'm using virtual machines, and i have low RAM memory i would like to disable the graphical mode of my server, linux systems have the following init values: (after this step if needed you can low down the server RAM to 1536 MB)
+13. **Optional**: since I'm using virtual machines, and I have low RAM memory, I would like to disable the graphical mode of my server. Linux systems have the following init values: (after this step if needed you can low down the server RAM to 1536 MB)
 
 >- 0 – Halt.
 >- 1 – Single-user text mode.
@@ -326,7 +331,7 @@ Useful commands:
 
 ### Configuring the computer ###
 
-1. Configure you network card to have a fixed ip (e.g. **192.168.0.11/24**) or leave it as DHCP, **set the DNS to your server ip, in my scenario 192.168.0.10** and as I said, **192.168.0.1/24** as gateway
+1. Configure your network card to have a fixed IP (e.g. **192.168.0.11/24**) or leave it as DHCP, **set the DNS to your server ip, in my scenario 192.168.0.10** and as I said, **192.168.0.1/24** as gateway
    
 2. Set your computer name and your domain, following the patern `hostnamectl set-hostname --static "$COMPUTERNAME.$DOMAIN"`, **choose a DNS valid name for the computer**
 
@@ -441,19 +446,19 @@ chronyc sources
 yum install -y epel-release
 ```
 
-2. Install SSSD, realm, samba and kerberos:
+2. Install SSSD, realm, Samba and Kerberos:
 
 ```
 yum install -y sssd realmd oddjob oddjob-mkhomedir adcli samba-winbind-krb5-locator samba-common samba-common-tools samba-winbind krb5-workstation openldap-clients
 ```
 
-3. Make a backup of your kerberos file and delete the original file
+3. Make a backup of your Kerberos file and delete the original file
 
 ```
 mv /etc/krb5.conf /etc/krb5.conf.raw
 ```
 
-4. Create a /etc/krb5.conf file with the contents of the file bellow, change every `INTRA.IT` by your domain and in **uppercase**, change every `intra.it` by your domain in lowercase, and change every `adserver` by your ad server name
+4. Create a /etc/krb5.conf file with the contents of the file bellow, change every `INTRA.IT` by your domain and in **UPPERCASE**, change every `intra.it` by your domain in lowercase, and change every `adserver` by your ad server name
 
 ```
 printf "[logging]\ndefault = FILE:/var/log/krb5libs.log\nkdc = FILE:/var/log/krb5kdc.log\nadmin_server = FILE:/var/log/kadmind.log\n\n[libdefaults]\ndns_lookup_realm = true\ndns_lookup_kdc = true\nticket_lifetime = 24h\nrenew_lifetime = 7d\nforwardable = true\nrdns = false\ndefault_realm = INTRA.IT\n\n[realms]\n# Uncomment following if DNS lookups are not working\n# INTRA.IT = {\n# kdc = adserver.intra.it\n# master_kdc = adserver.intra.it\n# admin_server = adserver.intra.it\n# }\n\n[domain_realm]\n# Uncomment following if DNS lookups are not working\n# .intra.it = INTRA.IT\n# intra.it = INTRA.IT\n" > /etc/krb5.conf
@@ -490,7 +495,7 @@ default_realm = INTRA.IT
 # intra.it = INTRA.IT
 ```
 
-5. Test your kerberos communication, replace `@intra.it` by `@$YOURDOMAIN`, the administrator password will be required
+5. Test your Kerberos communication, replace `@intra.it` by `@$YOURDOMAIN`, the administrator password will be required
 
 ```
 KRB5_TRACE=/dev/stdout kinit -V administrator@intra.it
@@ -511,7 +516,7 @@ cp /etc/krb5.conf /etc/krb5.conf.$(dnsdomainname)
 mv /etc/samba/smb.conf /etc/samba/smb.conf.raw
 ```
 
-8. Create a /etc/samba/smb.conf file with the contents of the file bellow, change every `INTRA.IT` by your domain and in **uppercase**, change every `INTRA` by your SLD (first part of domain) and in **uppercase**
+8. Create a /etc/samba/smb.conf file with the contents of the file bellow, change every `INTRA.IT` by your domain and in **UPPERCASE**, change every `INTRA` by your SLD (first part of domain) and in **UPPERCASE**
 
 ```
 printf "[global]\n\nsecurity = ads\nrealm = INTRA.IT\nworkgroup = INTRA\nlog file = /var/log/samba/%%m.log\nkerberos method = secrets and keytab\nclient signing = yes\nclient use spnego = yes\n" > /etc/samba/smb.conf
@@ -537,7 +542,7 @@ client use spnego = yes
 cp /etc/samba/smb.conf /etc/samba/smb.conf.$(dnsdomainname)
 ```
 
-10. Create a /etc/sssd/sssd.conf file with the contents of the file bellow, change every `intra.it` by your domain in lowercase, change every `INTRA.IT` by your domain in **uppercase**
+10. Create a /etc/sssd/sssd.conf file with the contents of the file bellow, change every `intra.it` by your domain in lowercase, change every `INTRA.IT` by your domain in **UPPERCASE**
     
 ```
 printf "[sssd]\nconfig_file_version = 2\ndomains = intra.it\nservices = nss, pam\n\n[domain/intra.it]\n# Uncomment if you need offline logins\n# cache_credentials = true\n\nid_provider = ad\nauth_provider = ad\naccess_provider = ad\n\n# Uncomment if service discovery is not working\n# ad_server = adserver.intra.it\n\n# Uncomment if you want to use POSIX UIDs and GIDs set on the AD side\n# ldap_id_mapping = False\n\n# Uncomment if the trusted domains are not reachable\n#ad_enabled_domains = intra.it\n\n# Comment out if the users have the shell and home dir set on the AD side\ndefault_shell = /bin/bash\nfallback_homedir = /home/%%d/%%u\n\n# Uncomment and adjust if the default principal SHORTNAME$@REALM is not available\n# ldap_sasl_authid = host/client.intra.it@INTRA.IT\n\n# Comment out if you prefer to use shortnames.\nuse_fully_qualified_names = True\n\n# Uncomment if the child domain is reachable, but only using a specific DC\n# [domain/intra.it/child.intra.it]\n# ad_server = dc.child.intra.it\n" > /etc/sssd/sssd.conf
@@ -604,7 +609,7 @@ You can leave the domain by using `net ads leave -U administrator@intra.it -S ad
 
 ### Joinning the domain using windows machine ###
 
-0. **warning** Control panel paths and button names might not be exactly the same for this session
+0. **WARNING!** Control panel paths and button names might not be exactly the same for this session
    
 1. Find your nertwork card adapter on windows (probably on `Control Panel\Network and Internet\network connections`)
 
@@ -612,13 +617,13 @@ You can leave the domain by using `net ads leave -U administrator@intra.it -S ad
 
 3. Select `Protocol IP v4` and then click `properties`
 
-4. Configure a manual IP or leave it as DHCP (automatic)
+4. Configure the IP manually or leave it as DHCP (automatic)
 
-5. Set the DNS with the ip of adserver (192.168.0.10 in this scenario)
+5. Set the DNS with the IP of adserver (192.168.0.10 in this scenario)
 
 6. Press `OK` -> `Close` -> `Close`
 
-7. Ping on `adserver.intra.it` and it must work
+7. Ping on `adserver.intra.it` and it should work
 
 8. Go to `Control Panel\Clock and Region`
 
@@ -626,35 +631,35 @@ You can leave the domain by using `net ads leave -U administrator@intra.it -S ad
 
 10.  Go to tab `Internet clock` and press `Change configurations`
 
-11. On Server type the ip of adserver (192.168.0.10 in this scenario) and click `sync now`
+11. On Server type the IP of adserver (192.168.0.10 in this scenario) and click `sync now`
 
 12. Click on `Ok` and then on `Ok`
 
-13. Go to windows explorer, right click on the computer and then click `Properties`
+13. Go to Windows Explorer, right click on the computer and then click `Properties`
 
 14. Click on `Change settings`
 
 15. Click on `change` and them define:
 >- The computer name (`clientwin` for this scenario)
->- The dns suffix (`intra.it` for this scenario)
+>- The DNS suffix (`intra.it` for this scenario)
 >- The domain (`intra.it` for this scenario)
 
 15. Press `Ok` and give the password for the `Administrator` user
 
 16. Restart the computer
 
-17. You are now on the domain
+17. You are now in the domain
     
 ## Managing the server ##
 
-**You can install windows administrative tools [RSAT](https://www.microsoft.com/en-us/download/details.aspx?id=45520) on clients to manage it**
+**You can install Windows administrative tools [RSAT](https://www.microsoft.com/en-us/download/details.aspx?id=45520) on clients to manage it**
 
-**Use `samba-tool -h` to learn the tool**, you can also do it 'recursively' like `samba-tool domain -h` or `samba-tool user create -h`
+**Use `samba-tool -h` to achieve the tool**, you can also do it 'recursively' like `samba-tool domain -h` or `samba-tool user create -h`
 
 ### Password securiy requirements ###
 
 >- You can see the password requirements by using `samba-tool domain passwordsettings show`
->- You can drop every requirement by using the followings **WARNING unsafe**
+>- You can drop every requirement by using the following commands: **(WARNING! Unsafe to do it!)**
 
 ```
 samba-tool domain passwordsettings set --complexity=off
@@ -671,13 +676,13 @@ samba-tool domain passwordsettings set --min-pwd-length=0
 
 ### Manage users ###
 
->- `samba-tool user create USERNAME PASSWORD` to create a user with a password **WARNING unsafe** but scriptable
+>- `samba-tool user create USERNAME PASSWORD` to create a user with a pre-given password. **(WARNING! Unsafe, but scriptable)** 
 
 >- `samba-tool user create USERNAME` to create a user, you need to type the password after
 
 >- `samba-tool user list` to list users
 
-### To bind users and groups ###
+### To bind users to groups ###
 
 >- `samba-tool group addmembers GROUPNAME USERNAME` to bind a user to a group
 
