@@ -107,19 +107,25 @@ yum install -y chrony
 systemctl enable chronyd
 ```  
 
-3. Add your network to chrony files, you may need to add other networks in this file for other scenarios. The format is `$network_ip/$network_mask`
+3. Add the network range that you want to allow on chrony files, you may need to add other networks in this file for other scenarios. The format is `$network_ip/$network_mask`
 
 ```
-printf "\nallow 192.168.0.0/24\n" >> /etc/chrony.conf
+printf "\nallow 192.168.0.0/16\n" >> /etc/chrony.conf # i used /16 to allow the hole private range
 ```
 
-4. Restart chrony service
+4. Make sure that your server is going to serve the clients even if now other sync providing time to it, to ensure that every computer have the same clock.
+
+```
+printf "\n\nlocal stratum 10\n" >> /etc/chrony.conf
+```
+
+5. Restart chrony service
 
 ```
 systemctl restart chronyd
 ```
 
-5. Permit chrony on firewall and then reload it
+6. Permit chrony on firewall and then reload it
 
 ```
 firewall-cmd --permanent --add-service=ntp # open ntp on firewall
@@ -289,7 +295,7 @@ ExecStart=/usr/local/samba/sbin/samba
 WantedBy=multi-user.target
 ```
 
-13. **Optional** since i'm using virtual machines, and i have low RAM memory i would like to disable the graphical mode of my server, linux systems have the following init values:
+13. **Optional** since i'm using virtual machines, and i have low RAM memory i would like to disable the graphical mode of my server, linux systems have the following init values: (after this step if needed you can low down the server RAM to 1536 MB)
 
 >- 0 – Halt.
 >- 1 – Single-user text mode.
@@ -394,21 +400,28 @@ cat /etc/resolv.conf
 sudo yum install chrony
 ```
 
-2. Edit the file /etc/chrony.conf to add an entry to the ad server in the format `Server $SERVERIP` and to remove other servers commenting the line `pool 2.centos.pool.ntp.org iburst`
+2. Edit the file /etc/chrony.conf to add an entry to the ad server in the format `Server $SERVERIP_OR_NAME` and to remove other servers commenting the line `pool 2.centos.pool.ntp.org iburst`
 
 ```
-echo "Server 192.168.0.10" >> /etc/chrony.conf
+echo "Server adserver.intra.it" >> /etc/chrony.conf 
 sed -i -e '/pool 2.centos.pool.ntp.org iburst/ s/^#*/#/' /etc/chrony.conf
 ```
 
-3. Enable chrony to launch at boot and start it
+3. Force the synchronization, stopping the chrony service first and then sync with the command following the pattern `chronyd -q 'server $SERVERIP iburst'`:
+```
+systemctl stop chronyd
+chronyd -q 'server adserver.intra.it iburst'
+systemctl start chronyd
+```
+
+4. Enable chrony to launch at boot and start it
 
 ```
 systemctl enable chronyd # enable chrony
 systemctl start chronyd # start chrony
 ```
 
-4. Check if your server is on the sources of chrony
+5. Check if your server is on the sources of chrony
 
 ```
 chronyc sources
@@ -417,7 +430,7 @@ chronyc sources
 #210 Number of sources = 1
 #MS Name/IP address         Stratum Poll Reach LastRx Last sample               
 #===============================================================================
-#^? adserver.intra.it             0   6     0     -     +0ns[   +0ns] +/-    0ns
+#^? adserver.intra.it            10   6     1     2   -222ms[ -222ms] +/-  307us
 ```
 
 ### Joinning the domain using linux machine ###
