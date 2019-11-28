@@ -891,49 +891,47 @@ su -l aministrator@intra.it
 
 
 ### Joinning the domain using Windows machine ###
+ 
+1. Go to `Control Panel\Network and Internet\Network Connections`, and find your nertwork card adapter on Windows 
 
-1. **WARNING** Control panel paths and button names might not be exactly the same for this session
-   
-2. Find your nertwork card adapter on Windows (probably on `Control Panel\Network and Internet\network connections`)
+2. Right click on your adapter and them click on `Properties`
 
-3. Right click on your adapter and them click on `properties`
+3. Select `Internet Protocol Version 4 (TCP/IPv4)` and then click `Properties`
 
-4. Select `Protocol IP v4` and then click `properties`
+4. Configure the IP manually or leave it as DHCP (automatic)
 
-5. Configure the IP manually or leave it as DHCP (automatic)
+5. Set the DNS with the IP of adserver (192.168.0.10 in this scenario)
 
-6. Set the DNS with the IP of adserver (192.168.0.10 in this scenario)
+6. Press `OK` -> `Close` -> `Close`
 
-7. Press `OK` -> `Close` -> `Close`
+7. Ping on `adserver.intra.it` and it should work
 
-8. Ping on `adserver.intra.it` and it should work
+8. Go to `Control Panel\Clock and Region`
 
-9. Go to `Control Panel\Clock and Region`
+9.  Click on `Set the time and date`
 
-10. Click on `Define date and time`
+10.  Go to tab `Internet Time` and press `Change settings...`
 
-11.  Go to tab `Internet clock` and press `Change configurations`
+11. On Server put `adserver.intra.it` (the AD server name or OP) and click `Update now`
 
-12. On Server type the IP of adserver (192.168.0.10 in this scenario) and click `sync now`
+12. Click on `OK` and then on `OK`
 
-13. Click on `Ok` and then on `Ok`
+13. Go to `Control Panel\All Control Panel Items\System`
 
-14. Go to Windows Explorer, right click on the computer and then click `Properties`
+14. Inside `Computer name, domain, and workgroup settings` click on `Change settings`
 
-15. Click on `Change settings`
-
-16. Click on `change` and them define:
+15. Click on `Change..` and then define:
 >- The computer name (`clientwin` for this scenario)
->- The DNS suffix (`intra.it` for this scenario)
+>- The DNS suffix (`intra.it` for this scenario), to find this option click on `More..`
 >- The domain (`intra.it` for this scenario)
 
-15. Press `Ok` and give the password for the `Administrator` user
+16. Press `OK` and give the password for the `Administrator` user
 
-16. Restart the computer
+17. Restart the computer
 
-17. You are now on the domain
+18. You are now on the domain
    
-18. Login :D
+19. Login :D
     
 ## Managing the server ##
 
