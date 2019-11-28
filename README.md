@@ -927,11 +927,9 @@ su -l aministrator@intra.it
 
 16. Press `OK` and give the password for the `Administrator` user
 
-17. Restart the computer
-
-18. You are now on the domain
+17. You are now on the domain, press `OK`, and restart the computer
    
-19. Login :D
+18. Login :D
     
 ## Managing the server ##
 
