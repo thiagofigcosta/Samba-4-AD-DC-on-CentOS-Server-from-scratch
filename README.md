@@ -679,7 +679,7 @@ chronyc sources
 1. Install Samba and Kerberos:
 
 ``` 
-yum install -y samba samba-winbind-krb5-locator samba-common samba-common-tools samba-winbind krb5-workstation samba-winbind-clients
+yum install -y samba samba-winbind-krb5-locator samba-common samba-common-tools samba-winbind krb5-workstation samba-winbind-clients oddjob-mkhomedir
 ```
 
 2. Make a backup of your Kerberos file and delete the original file
@@ -819,6 +819,21 @@ wbinfo -u
 #INTRA\administrator
 ```
 
+```
+net ads info 
+
+# result:
+#LDAP server: 192.168.0.10
+#LDAP server name: adserver.intra.it
+#Realm: INTRA.IT
+#Bind Path: dc=INTRA,dc=IT
+#LDAP port: 389
+#Server time: Sat, 30 Nov 2019 14:01:20 CET
+#KDC server: 192.168.0.10
+#Server time offset: 11
+#Last machine account password change: Sat, 30 Nov 2019 13:37:13 CET
+```
+
 You can leave the domain by using `net ads leave -U administrator@intra.it -S adserver.intra.it`
 
 11. Restart samba and winbind, then ensure that then start at boot:
@@ -831,10 +846,12 @@ systemctl enable winbind.service
 systemctl enable smb
 ```
 
-12. Create a /etc/sssd/sssd.conf file with the contents of the file bellow, change every `intra.it` by your domain in lowercase, change every `INTRA.IT` by your domain in **uppercase**
+12. Create a /etc/sssd/sssd.conf file with the contents of the file bellow, change every `intra.it` by your domain in lowercase, change every `INTRA.IT` by your domain in **uppercase**, and fix its permissions
     
 ```
-printf "[sssd]\nconfig_file_version = 2\ndomains = intra.it\nservices = nss, pam\n\n[domain/intra.it]\n# Uncomment if you need offline logins\n# cache_credentials = true\n\nid_provider = ad\nauth_provider = ad\naccess_provider = ad\n\n# Uncomment if service discovery is not working\n# ad_server = adserver.intra.it\n\n# Uncomment if you want to use POSIX UIDs and GIDs set on the AD side\n# ldap_id_mapping = False\n\n# Uncomment if the trusted domains are not reachable\n#ad_enabled_domains = intra.it\n\n# Comment out if the users have the shell and home dir set on the AD side\ndefault_shell = /bin/bash\nfallback_homedir = /home/%%d/%%u\n\n# Uncomment and adjust if the default principal SHORTNAME$@REALM is not available\n# ldap_sasl_authid = host/client.intra.it@INTRA.IT\n\n# Comment out if you prefer to use shortnames.\nuse_fully_qualified_names = True\n\n# Uncomment if the child domain is reachable, but only using a specific DC\n# [domain/intra.it/child.intra.it]\n# ad_server = dc.child.intra.it\n" > /etc/sssd/sssd.conf
+printf "[sssd]\nconfig_file_version = 2\ndomains = intra.it\nservices = nss, pam, pac\n\n[domain/adserver.intra.it]\n# Uncomment if you need offline logins\n# cache_credentials = true\n\nid_provider = adserver\nauth_provider = adserver\naccess_provider = adserver\n\n# Uncomment if service discovery is not working\n# ad_server = adserver.intra.it\n\n# Uncomment if you want to use POSIX UIDs and GIDs set on the AD side\n# ldap_id_mapping = False\n\n# Uncomment if the trusted domains are not reachable\n#ad_enabled_domains = intra.it\n\n# Comment out if the users have the shell and home dir set on the AD side\ndefault_shell = /bin/bash\nfallback_homedir = /home/%%d/%%u\n\n# Uncomment and adjust if the default principal SHORTNAME$@REALM is not available\n# ldap_sasl_authid = host/client.intra.it@INTRA.IT\n\n# Comment out if you prefer to use shortnames.\nuse_fully_qualified_names = True\n\n# Uncomment if the child domain is reachable, but only using a specific DC\n# [domain/intra.it/child.intra.it]\n# ad_server = dc.child.intra.it\n" > /etc/sssd/sssd.conf
+
+chmod 0600 /etc/sssd/sssd.conf
 ```
 
 The `/etc/sssd/sssd.conf` file:
@@ -843,15 +860,15 @@ The `/etc/sssd/sssd.conf` file:
 [sssd]
 config_file_version = 2
 domains = intra.it
-services = nss, pam
+services = nss, pam, pac
 
-[domain/intra.it]
+[domain/adserver.intra.it]
 # Uncomment if you need offline logins
 # cache_credentials = true
 
-id_provider = ad
-auth_provider = ad
-access_provider = ad
+id_provider = adserver
+auth_provider = adserver
+access_provider = adserver
 
 # Uncomment if service discovery is not working
 # ad_server = adserver.intra.it
@@ -883,18 +900,25 @@ use_fully_qualified_names = True
 cp /etc/sssd/sssd.conf /etc/sssd/sssd.conf.$(dnsdomainname)
 ```
 
-14. Make a copy of your `/etc/nsswitch.conf` file:
+14. Start and enable it:
+
+```
+systemctl start sssd.service
+systemctl enable sssd.service
+```
+
+15. Make a copy of your `/etc/nsswitch.conf` file:
 ```
 cp /etc/nsswitch.conf /etc/nsswitch.conf.raw
 ```
 
-15. Change Name Service Switch file `/etc/nsswitch.conf` to retrieve data about users, groups and passwords, adding the following lines:
+16.  Change Name Service Switch file `/etc/nsswitch.conf` to retrieve data about users, groups and passwords, adding `compat winbind` after lines with: `passwd:` and `passwd:`, and adding `compat` after lines with: `shadow:`:
 
-```
+<!-- ```
 printf "\n\npasswd: compat winbind\ngroup: compat winbind\nshadow: compat\n" >> /etc/nsswitch.conf
-```
+``` -->
 
->>- The lines:
+>>- Partial content of `/etc/nsswitch.conf`:
 
 ```
 passwd: compat winbind
@@ -902,7 +926,7 @@ group: compat winbind
 shadow: compat
 ```
 
-16. Check if it worked:
+17. Check if it worked:
 
 ```
 getent passwd | grep administrator && getent group | grep "domain users"
@@ -912,7 +936,10 @@ getent passwd | grep administrator && getent group | grep "domain users"
 #domain users:x:10006:
 ```
 
-17. Change the login file `/etc/pam.d/login` to handle authentication, adding the following lines:
+
+18. **WARNING: WORK IN PROGRESS** Change the login file `/etc/pam.d/login` to handle authentication, adding the following lines:
+
+**GUI LOGIN FILE: /etc/pam.d/gdm-password**
 
 ```
 printf "\n\n\nauth sufficient   pam_winbind.so\nauth sufficient   pam_unix.so nullok_secure use_first_pass\nauth required   pam_deny.so\naccount sufficient   pam_winbind.so\naccount required   pam_unix.so\nsession required   pam_unix.so\nsession required   pam_mkhomedir.so umask=0022 skel=/etc/skel\n" >> /etc/pam.d/login
@@ -929,7 +956,7 @@ session required     pam_unix.so
 session required     pam_mkhomedir.so umask=0022 skel=/etc/skel
 ```
 
-18. Change the sudo file `/etc/pam.d/sudo` to handle permissions. adding the following lines:
+19. **WARNING: WORK IN PROGRESS** Change the sudo file `/etc/pam.d/sudo` to handle permissions. adding the following lines:
 
 ```
 printf "\n\nauth sufficient   pam_winbind.so\nauth sufficient   pam_unix.so use_first_pass\nauth required   pam_deny.so\n\n@include common-account\n" >> /etc/pam.d/sudo
@@ -944,19 +971,22 @@ auth required     pam_deny.so
 @include common-account
 ```
 
-19. Make your user home folder in the format `/home/$DOMAIN/$USER`, **domain in UPPERCASE**
+20. Make your user home folder in the format `/home/$DOMAIN/$USER`, **domain in UPPERCASE** **FIX TO BE AUTOMATIC**
 
 ```
+mkdir /home/INTRA/
 mkdir /home/INTRA/administrator
 ```
 
-20. Login
+21. Login. Togin with administrator requires root privileges, you can create another user and login on it without being root at first place. **WARNING: GUI LOGIN NOT WORKING YET, FIX PAM FILES, TO ALLOW GUI LOGIN**
 
 ```
 su -l aministrator@intra.it
 ```
 
-21. **THIAGO FIZ PAM FILES, TO ALLOW GUI LOGIN**
+```
+su -l toto@intra.it
+```
 
 
 
