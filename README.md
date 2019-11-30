@@ -1003,7 +1003,7 @@ su -l aministrator@intra.it
    
 19. Login :D
 
-20. Install RSAT and go to `Control Panel\System and Security\Administrative Tools` to manage it
+20. Install RSAT and go to `Control Panel\System and Security\Administrative Tools` to manage it. **`Active Directory administrative Center` not working yet, but the others do**
     
 ## Managing the server ##
 
