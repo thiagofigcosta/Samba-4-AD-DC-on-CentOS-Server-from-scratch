@@ -36,7 +36,6 @@ samba administrator password = Toto123
 >- Enable bidirecional clipboard on the machines, it can be very useful
 >- Install install CentOS and Windows on its own machines
 
-## Configuring the server ##
 
 ### Starting ###
 1. Fill safer by taking snapshots of the machine after important steps
@@ -132,9 +131,58 @@ firewall-cmd --permanent --add-service=ntp # open ntp on firewall
 firewall-cmd --reload # reload firewall
 ```
 
+### Setting up DHCP server ###
+
+1. Install DHCP
+   
+```
+yum install -y dhcp-server
+```
+
+2. Make a backup of your `/etc/dhcp/dhcpd.conf` file and delete the old one:
+
+```
+mv /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.raw
+```
+
+3. Use the following configuration file, raplacing the range, network, gateway, mask, domain, and dns server
+
+```
+printf "option domain-name \"$(hostname |cut -d. -f2-)\"; # domain\noption domain-name-servers $(hostname); # dns server\ndefault-lease-time 36000; # voluntary duration of IP in seconds\nmax-lease-time 86400; # max duration of IP in seconds\nauthoritative; # official server\n\nsubnet 192.168.0.0 netmask 255.255.255.0 {\n   option routers 192.168.0.1; # gateway\n\n   range 192.168.0.11 192.168.0.254; # range distributed to clients\n}\n" > /etc/dhcp/dhcpd.conf
+```
+
+>>- This is how the `/etc/dhcp/dhcpd.conf` file looks like: 
+```
+option domain-name "intra.it"; # domain
+option domain-name-servers adserver.intra.it; # dns server
+default-lease-time 36000;    # voluntary duration of IP in seconds
+max-lease-time 86400; # max duration of IP in seconds
+authoritative; # official server
+
+subnet 192.168.0.0 netmask 255.255.255.0 {
+    option routers 192.168.0.1; # gateway
+
+    range 192.168.0.11 192.168.0.254; # range distributed to clients
+}
+```
+
+4. Start and enable it:
+   
+```
+systemctl start dhcpd
+systemctl enable dhcpd
+```
+
+5. Allow it on firewall:
+
+```
+firewall-cmd --add-port=67/udp --permanent
+firewall-cmd --reload
+```
+
 ### Instaling samba ###
 
-0. Disable SElinux and reboot
+1. Disable SElinux and reboot
 
 ```
 sed -i -e 's/SELINUX=enforcing/SELINUX=disabled/g;s/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -183,9 +231,21 @@ cp /etc/samba/smb.conf /etc/samba/smb.conf.raw
 ```
 
 7. Edit /etc/samba/smb.conf setting:
+
+
+```
+PCNAME=$(echo $(hostname | cut -d. -f1))
+WORKNAME=$(echo $(hostname | cut -d. -f2))
+DOMNAME=$(echo $(hostname |cut -d. -f2-))
+
+printf "[global]\n   server role = active directory domain controller\n   netbios name = ${PCNAME^^}\n   workgroup = ${WORKNAME^^}\n   realm = ${DOMNAME^^}\n   security = user\n   passdb backend = tdbsam\n   printing = cups\n   printcap name = cups\n   load printers = yes\n   cups options = raw\n   kerberos method = system keytab\n   server services = -dns\n   idmap_ldb:use rfc2307 = yes\n   tls enabled = yes\n   tls keyfile = tls/key.pem\n   tls cafile = tls/ca.pem\n   tls certfile = tls/cert.pem\n\n[netlogon]\n   comment = Logon Service\n   path = /home/samba/netlogon\n   write list = root\n\n\n[homes]\n   comment = Home Directories\n   valid users = %%S, %%D%%w%%S\n   browseable = No\n   read only = No\n   inherit acls = Yes\n\n[printers]\n   comment = All Printers\n   path = /var/tmp\n   printable = Yes\n   create mask = 0600\n   browseable = No\n\n[print\$]\n   comment = Printer Drivers\n   path = /var/lib/samba/drivers\n   write list = @printadmin root\n   force group = @printadmin\n   create mask = 0664\n" > /etc/samba/smb.conf
+```
+
    <!-- verificar: https://blog.godatadriven.com/samba-configuration -->
-   >- Inside [global] session:
+   >- After [global] session:
    >>- Set workgroup equal to your SLD (first part of domain) **in uppercase**
+   >>- Add the following line `server role = active directory domain controller`
+   >>- Add the following line `netbios name = ADSERVER` which has the format `netbios name = $COMPUTERNAME` **in uppercase**
    >>- Add the following line `realm = INTRA.IT` which has the format `realm = $DOMAIN` **in uppercase**
    >>- Add the following line `kerberos method = system keytab`
    >>- Add the following line `server services = -dns` **to work with bind dns instead of samba internal** 
@@ -194,11 +254,16 @@ cp /etc/samba/smb.conf /etc/samba/smb.conf.raw
    >>- Add the following line `tls keyfile = tls/key.pem`
    >>- Add the following line `tls cafile = tls/ca.pem`
    >>- Add the following line `tls certfile = tls/cert.pem`
+   >>- Add the following line `[netlogon]`
+   >>- Add the following line `comment = Logon Service`
+   >>- Add the following line `write list = root`
 
 After this step the [global] session should look like:
 
 ```
 [global]
+        server role = active directory domain controller
+        netbios name = ADSERVER
         workgroup = INTRA
         realm = INTRA.IT
         security = user
@@ -214,6 +279,11 @@ After this step the [global] session should look like:
         tls keyfile = tls/key.pem
         tls cafile = tls/ca.pem
         tls certfile = tls/cert.pem
+
+[netlogon]
+        comment = Logon Service
+        path = /home/samba/netlogon
+        write list = root
 ```
 
 
@@ -927,9 +997,13 @@ su -l aministrator@intra.it
 
 16. Press `OK` and give the password for the `Administrator` user
 
-17. You are now on the domain, press `OK`, and restart the computer
+17. Restart the computer
+
+18. You are now on the domain
    
-18. Login :D
+19. Login :D
+
+20. Install RSAT and go to `Control Panel\System and Security\Administrative Tools` to manage it
     
 ## Managing the server ##
 
