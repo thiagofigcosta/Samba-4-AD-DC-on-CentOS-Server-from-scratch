@@ -1,4 +1,4 @@
-# How to install Samba 4 AD DC on CentOS 8 and connect Windows and Linux clients #
+# How to install Samba 4 AD DC (+DNS+NTP+DHCP) on CentOS 8 and connect Windows and Linux as clients #
 
 
 How to install Active Directory on CentOS 8 Server and connect Windows and Linux machines as clients
