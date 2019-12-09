@@ -4,7 +4,7 @@
 How to install Active Directory on CentOS 8 Server and connect Windows and Linux machines as clients
 We also are going to show how to install and setup DNS, DHCP and NTP (required for AD)
 
-![Login on Linux](https://github.com/thiagofigcosta/Samba-4-AD-DC-on-CentOS-Server-from-scratch/blob/master/Login%20on%20Windows.png)
+![Login on Linux](Login%20on%20Windows.png)
 
 ## Requirements ##
 
